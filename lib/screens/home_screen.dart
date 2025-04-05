@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/pokemon_service.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const _HomeScreenState();
-  }
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -34,10 +32,10 @@ class _HomeScreenState extends State<HomeScreen> {
           } else {
             final pokemonList = snapshot.data!;
             return ListView.builder(
-              itemCount: pokemonList,
+              itemCount: pokemonList.length,
               itemBuilder: (context, index) {
                 final pokemon = pokemonList[index];
-                return ListTilte(
+                return ListTile(
                   title: Text(pokemon['name'].toString().toUpperCase()),
                   onTap: () {},
                 );
