@@ -104,6 +104,20 @@ class PokemonDetailScreen extends StatelessWidget {
     return multipliers;
   }
 
+  Future<String> _fetchEncounterArea(int id) async {
+    final response = await http.get(
+      Uri.parse('https://pokeapi.co/api/v2/pokemon/$id/encounters'),
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data is List && data.isNotEmpty) {
+        final firstLocation = data[0]['location_area']['name'];
+        return firstLocation.toString().replaceAll('-', ' ').toUpperCase();
+      }
+    }
+    return '???';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -161,7 +175,7 @@ class PokemonDetailScreen extends StatelessWidget {
           return FutureBuilder<String?>(
             future: _fetchFireRedDescription(id),
             builder: (context, descSnap) {
-              final String? description = descSnap.data;
+              final description = descSnap.data;
 
               return FutureBuilder<Map<String, double>>(
                 future: _fetchDamageRelations(types),
@@ -173,36 +187,40 @@ class PokemonDetailScreen extends StatelessWidget {
                     builder: (context, strongSnap) {
                       final strengths = strongSnap.data ?? {};
 
-                      return SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            section(
-                              Column(
-                                children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                      return FutureBuilder<String>(
+                        future: _fetchEncounterArea(id),
+                        builder: (context, areaSnap) {
+                          final area = areaSnap.data ?? '???';
+
+                          return SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                section(
+                                  Column(
                                     children: [
                                       Text(
-                                        '#$id',
+                                        '#$id $name',
                                         style: GoogleFonts.pressStart2p(
                                           fontSize: 12,
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        name,
-                                        style: GoogleFonts.pressStart2p(
-                                          fontSize: 16,
+                                      const SizedBox(height: 12),
+                                      if (img != null)
+                                        Image.network(
+                                          img,
+                                          height: 150,
+                                          width: 150,
+                                          filterQuality: FilterQuality.none,
                                         ),
-                                      ),
-                                      const Spacer(),
+                                      const SizedBox(height: 8),
                                       Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children:
                                             types.map((t) {
                                               final color =
                                                   typeColors[t.toLowerCase()] ??
-                                                  Colors.grey[300]!;
+                                                  Colors.grey;
                                               return Container(
                                                 margin:
                                                     const EdgeInsets.symmetric(
@@ -228,207 +246,214 @@ class PokemonDetailScreen extends StatelessWidget {
                                               );
                                             }).toList(),
                                       ),
+                                      const SizedBox(height: 8),
+                                      if (description != null)
+                                        Text(
+                                          description,
+                                          style: GoogleFonts.pressStart2p(
+                                            fontSize: 10,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'AREA: $area',
+                                        style: GoogleFonts.pressStart2p(
+                                          fontSize: 10,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
                                     ],
                                   ),
-                                  const SizedBox(height: 12),
-                                  if (img != null)
-                                    Image.network(
-                                      img,
-                                      height: 150,
-                                      width: 150,
-                                      filterQuality: FilterQuality.none,
-                                    ),
-                                  if (description != null) ...[
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      description,
-                                      style: GoogleFonts.pressStart2p(
-                                        fontSize: 10,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            section(
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'HEIGHT: $height',
-                                    style: GoogleFonts.pressStart2p(
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                  Text(
-                                    'WEIGHT: $weight',
-                                    style: GoogleFonts.pressStart2p(
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            section(
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children:
-                                    abilities
-                                        .map(
-                                          (a) => Text(
-                                            a,
-                                            style: GoogleFonts.pressStart2p(
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                              ),
-                            ),
-                            section(
-                              Column(
-                                children:
-                                    stats.map((s) {
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 4,
+                                ),
+                                section(
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'HEIGHT: $height',
+                                        style: GoogleFonts.pressStart2p(
+                                          fontSize: 10,
                                         ),
-                                        child: Row(
-                                          children: [
-                                            SizedBox(
-                                              width: 80,
-                                              child: Text(
-                                                s['name'],
+                                      ),
+                                      Text(
+                                        'WEIGHT: $weight',
+                                        style: GoogleFonts.pressStart2p(
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                section(
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children:
+                                        abilities
+                                            .map(
+                                              (a) => Text(
+                                                a,
                                                 style: GoogleFonts.pressStart2p(
-                                                  fontSize: 8,
+                                                  fontSize: 10,
                                                 ),
                                               ),
+                                            )
+                                            .toList(),
+                                  ),
+                                ),
+                                section(
+                                  Column(
+                                    children:
+                                        stats.map((s) {
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 4,
                                             ),
-                                            Expanded(
-                                              child: LinearProgressIndicator(
-                                                value:
-                                                    (s['value'] as int) / 100,
-                                                color: Colors.red,
-                                                backgroundColor:
-                                                    Colors.grey[300],
-                                                minHeight: 8,
-                                              ),
+                                            child: Row(
+                                              children: [
+                                                SizedBox(
+                                                  width: 80,
+                                                  child: Text(
+                                                    s['name'],
+                                                    style:
+                                                        GoogleFonts.pressStart2p(
+                                                          fontSize: 8,
+                                                        ),
+                                                  ),
+                                                ),
+                                                Expanded(
+                                                  child:
+                                                      LinearProgressIndicator(
+                                                        value:
+                                                            (s['value']
+                                                                as int) /
+                                                            100,
+                                                        color: Colors.red,
+                                                        backgroundColor:
+                                                            Colors.grey[300],
+                                                        minHeight: 8,
+                                                      ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  '${s['value']}',
+                                                  style:
+                                                      GoogleFonts.pressStart2p(
+                                                        fontSize: 8,
+                                                      ),
+                                                ),
+                                              ],
                                             ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              '${s['value']}',
-                                              style: GoogleFonts.pressStart2p(
-                                                fontSize: 8,
-                                              ),
-                                            ),
-                                          ],
+                                          );
+                                        }).toList(),
+                                  ),
+                                ),
+                                if (weaknesses.isNotEmpty)
+                                  section(
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'WEAK AGAINST:',
+                                          style: GoogleFonts.pressStart2p(
+                                            fontSize: 10,
+                                          ),
                                         ),
-                                      );
-                                    }).toList(),
-                              ),
+                                        const SizedBox(height: 8),
+                                        Wrap(
+                                          spacing: 6,
+                                          children:
+                                              weaknesses.entries
+                                                  .where((e) => e.value > 1.0)
+                                                  .map((entry) {
+                                                    final color =
+                                                        typeColors[entry.key
+                                                            .toLowerCase()] ??
+                                                        Colors.grey;
+                                                    return Container(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 4,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: color,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              6,
+                                                            ),
+                                                      ),
+                                                      child: Text(
+                                                        entry.key.toUpperCase(),
+                                                        style:
+                                                            GoogleFonts.pressStart2p(
+                                                              fontSize: 8,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  })
+                                                  .toList(),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (strengths.isNotEmpty)
+                                  section(
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'STRONG AGAINST:',
+                                          style: GoogleFonts.pressStart2p(
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Wrap(
+                                          spacing: 6,
+                                          children:
+                                              strengths.entries
+                                                  .where((e) => e.value > 1.0)
+                                                  .map((entry) {
+                                                    final color =
+                                                        typeColors[entry.key
+                                                            .toLowerCase()] ??
+                                                        Colors.grey;
+                                                    return Container(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 8,
+                                                            vertical: 4,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: color,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              6,
+                                                            ),
+                                                      ),
+                                                      child: Text(
+                                                        entry.key.toUpperCase(),
+                                                        style:
+                                                            GoogleFonts.pressStart2p(
+                                                              fontSize: 8,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  })
+                                                  .toList(),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
                             ),
-                            if (weaknesses.isNotEmpty)
-                              section(
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'WEAK AGAINST:',
-                                      style: GoogleFonts.pressStart2p(
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 6,
-                                      children:
-                                          weaknesses.entries
-                                              .where((e) => e.value > 1.0)
-                                              .map((entry) {
-                                                final color =
-                                                    typeColors[entry.key
-                                                        .toLowerCase()] ??
-                                                    Colors.grey;
-                                                return Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: color,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          6,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    entry.key.toUpperCase(),
-                                                    style:
-                                                        GoogleFonts.pressStart2p(
-                                                          fontSize: 8,
-                                                        ),
-                                                  ),
-                                                );
-                                              })
-                                              .toList(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (strengths.isNotEmpty)
-                              section(
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'STRONG AGAINST:',
-                                      style: GoogleFonts.pressStart2p(
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 6,
-                                      children:
-                                          strengths.entries
-                                              .where((e) => e.value > 1.0)
-                                              .map((entry) {
-                                                final color =
-                                                    typeColors[entry.key
-                                                        .toLowerCase()] ??
-                                                    Colors.grey;
-                                                return Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: color,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          6,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    entry.key.toUpperCase(),
-                                                    style:
-                                                        GoogleFonts.pressStart2p(
-                                                          fontSize: 8,
-                                                        ),
-                                                  ),
-                                                );
-                                              })
-                                              .toList(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
+                          );
+                        },
                       );
                     },
                   );
