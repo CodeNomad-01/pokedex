@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/pokemon_service.dart';
 import '../screens/pokemon_details_screen.dart';
+import '../screens/type_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,12 +51,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onSearchChanged() {
-    String query = _searchController.text.toLowerCase().trim();
+    final query = _searchController.text.toLowerCase().trim();
     setState(() {
       _filteredPokemons =
           _allPokemons.where((p) {
             final name = p['name'].toString().toLowerCase();
-            final url = p['url'];
+            final url = p['url'] as String;
             final id = url.split('/')[url.split('/').length - 2];
             return name.contains(query) || id == query;
           }).toList();
@@ -65,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<List<String>> _fetchTypes(String url) async {
     final data = await _service.fetchPokemonDetail(url);
     final types = data['types'] as List;
-    return types.map<String>((t) => t['type']['name']).toList();
+    return types.map<String>((t) => t['type']['name'] as String).toList();
   }
 
   @override
@@ -81,6 +82,18 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('POKEDEX'),
         backgroundColor: Colors.red,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.table_chart),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TypesScreen()),
+              );
+            },
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -115,8 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: _filteredPokemons.length,
                 itemBuilder: (context, i) {
                   final p = _filteredPokemons[i];
-                  final name = p['name'];
-                  final url = p['url'];
+                  final name = p['name'] as String;
+                  final url = p['url'] as String;
                   final id = url.split('/')[url.split('/').length - 2];
                   final img =
                       'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png';
@@ -129,7 +142,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: CircularProgressIndicator(strokeWidth: 1),
                         );
                       }
-
                       final types = snapshot.data!;
                       return GestureDetector(
                         onTap:
@@ -173,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               Flexible(
                                 child: Text(
-                                  name.toString().toUpperCase(),
+                                  name.toUpperCase(),
                                   style: const TextStyle(
                                     fontFamily: 'press-start',
                                     color: Colors.white,
@@ -190,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 runSpacing: 2,
                                 alignment: WrapAlignment.center,
                                 children:
-                                    types.map<Widget>((type) {
+                                    types.map((type) {
                                       final color =
                                           _typeColors[type.toLowerCase()] ??
                                           Colors.white;
